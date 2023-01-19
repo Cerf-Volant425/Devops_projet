@@ -1,0 +1,101 @@
+heat_template_version: rocky
+
+description: Example template with one bastion host and an internal network
+
+parameters:
+  ssh_keys:
+    type: comma_delimited_list
+
+resources:
+  ssh_security_group:
+    type: OS::Neutron::SecurityGroup
+    properties:
+      description: "SSH"
+      name: ssh_security_group
+      rules:
+        - remote_ip_prefix: 0.0.0.0/0
+          protocol: tcp
+          port_range_min: 22
+          port_range_max: 22
+
+  internal_security_group:
+    type: OS::Neutron::SecurityGroup
+    properties:
+      description: "Open all the ports inside the private network"
+      name: internal_security_group
+      rules:
+        - remote_ip_prefix: 192.168.10.0/24
+          direction: ingress
+
+  private_net:
+    type: OS::Neutron::Net
+    properties:
+      name: "private_net"
+
+  private_subnet:
+    type: OS::Neutron::Subnet
+    properties:
+      network_id: { get_resource: private_net }
+      cidr: "192.168.10.0/24"
+      dns_nameservers: [ "192.44.75.10" ]
+      ip_version: 4
+      allocation_pools:
+        - start: "192.168.10.200"
+          end: "192.168.10.254"
+      name: "private_subnet"
+
+  gateway_router:
+    type: OS::Neutron::Router
+    properties:
+      external_gateway_info:
+        network: external
+      name: "gateway_router"
+
+  gateway_router_interface:
+    type: OS::Neutron::RouterInterface
+    properties:
+      router_id: { get_resource: gateway_router}
+      subnet_id: { get_resource: private_subnet}
+      
+  bastion_port:
+    type: OS::Neutron::Port
+    properties:
+      network_id: { get_resource: private_net}
+      security_groups: [ get_resource: ssh_security_group,  get_resource: internal_security_group]
+      fixed_ips:
+        - subnet_id: { get_resource: private_subnet}
+          ip_address: 192.168.10.3
+
+  bastion_floating_ip:
+    type: OS::Neutron::FloatingIP
+    properties:
+      floating_network_id: external
+      port_id: { get_resource: bastion_port }
+
+  bastion:
+    type: vm-template.yaml
+    properties:
+      name: bastion
+      flavor: m1.small
+      network_port: { get_resource: bastion_port}
+      ssh_keys: {get_param: ssh_keys}
+      
+  mongo_port:
+    type: OS::Neutron::Port
+    properties:
+      network_id: { get_resource: private_net}
+      security_groups: [ get_resource: internal_security_group]
+      fixed_ips:
+        - subnet_id: { get_resource: private_subnet}
+          ip_address: 192.168.10.4
+          
+  mongo:
+    type: vm-template.yaml
+    properties:
+      name: mongo
+      flavor: m1.small
+      network_port: { get_resource: mongo_port}
+
+
+
+

@@ -1,0 +1,3 @@
+FROM python:3.9
+RUN python3 -m pip install --upgrade pip
+RUN pip3 install --no-cache-dir --trusted-host pypi.python.org pytest pytest_asyncio beanie httpx fastapi[all] Pillow protobuf grpcio grpcio-tools requests

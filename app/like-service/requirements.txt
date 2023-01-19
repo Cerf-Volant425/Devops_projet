@@ -1,0 +1,7 @@
+fastapi[all]
+mongoengine
+Pillow
+grpcio
+grpcio-tools
+beanie==1.8.12
+requests

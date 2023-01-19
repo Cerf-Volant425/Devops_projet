@@ -1,0 +1,6 @@
+fastapi[all]
+mongoengine
+Pillow
+grpcio
+grpcio-tools
+requests

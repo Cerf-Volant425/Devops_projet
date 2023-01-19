@@ -1,0 +1,56 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: photographer-service
+spec:
+  selector:
+    app: photographer-service
+  ports:
+  - protocol: TCP
+    port: 80
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: photographer-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: photographer-service
+  template:
+    metadata:
+      labels:
+        app: photographer-service
+    spec:
+      containers:
+      - name: photographer-service
+        image: gitlab-registry.imt-atlantique.fr/devops-s23/devops-s23-g09/photographer:latest
+        env:
+        - name: DATABASE_NAME
+          value: "devops-s23-09-photographer-db"
+        - name: AUTH_DATABASE_NAME
+          value: "devops-s23-09-photographer-db"
+        - name: MONGO_HOST
+          value: "mongo.cloud.rennes.enst-bretagne.fr"
+        - name: MONGO_USER
+          valueFrom:
+            secretKeyRef:
+              name: mongo
+              key: username
+        - name: MONGO_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mongo
+              key: password
+        imagePullPolicy: Always
+        resources:
+          limits:
+            memory: "512Mi"
+            cpu: "1"
+        ports:
+        - containerPort: 80
+      imagePullSecrets:
+      - name: regcred

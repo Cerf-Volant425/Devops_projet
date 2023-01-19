@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+service Tags {
+  rpc getTags (ImageRequest) returns (TagsReply) {}
+}
+
+message ImageRequest {
+  bytes file = 1;
+}
+
+message TagsReply {
+  repeated string tags = 1;
+}
